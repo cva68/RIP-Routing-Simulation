@@ -31,7 +31,12 @@ class ConfigLoader:
             router_info = {}
             router_info['router_id'] = self._config['ROUTER']['id']
             incoming_ports = self._config['ROUTER']['incoming_ports']
+            router_info['bind'] = self._config['ROUTER']['bind']
+
             router_info['incoming_ports'] = incoming_ports.split(', ')
+            for i, port in enumerate(router_info['incoming_ports']):
+                router_info['incoming_ports'][i] = int(port)
+
             return router_info
         except (KeyError, ValueError):
             self._logger.critical("Invalid configuration file.")
@@ -49,7 +54,7 @@ class ConfigLoader:
             if 'PEER' in section:
                 try:
                     peer = {}
-                    peer['port'] = self._config[section]['port']
+                    peer['port'] = int(self._config[section]['port'])
                     peer['metric'] = self._config[section]['metric']
                     peer['router_id'] = self._config[section]['router_id']
                     peer_info.append(peer)
