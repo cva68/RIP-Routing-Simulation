@@ -6,10 +6,11 @@
 """
 
 import logging
+import traceback
 from socket import socket, AF_INET, SOCK_DGRAM, error
 from _configloader import ConfigLoader
 
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.DEBUG
 
 
 class RIPDaemon:
@@ -46,14 +47,16 @@ class RIPDaemon:
         """
         for port in self._ports:
             try:
+                self._logger.debug("Binding to port %d", port)
                 self._sockets.append(socket(AF_INET, SOCK_DGRAM))
                 self._sockets[-1].setblocking(1)
                 self._sockets[-1].settimeout(1)
             except error:
                 self._logger.critical("Socket creation failed")
                 self.exit(1)
-            
+
             try:
+                self._logger.debug("Binding to %s:%d", self._bind, port)
                 self._sockets[-1].bind((self._bind, port))
             except error:
                 self._logger.critical("Socket binding failed")
@@ -63,6 +66,7 @@ class RIPDaemon:
         """
             Close all sockets
         """
+        self._logger.debug("Closing sockets")
         for sock in self._sockets:
             sock.close()
 
@@ -70,6 +74,8 @@ class RIPDaemon:
         """
             Start the RIP Daemon.
         """
+        self._logger.info("Starting RIP Daemon.")
+        self._logger.debug("Loading configuration file.")
         # Load router config
         router_info = self._config_loader.get_router_info()
         self._id = router_info['router_id']
@@ -82,10 +88,22 @@ class RIPDaemon:
         # Bind sockets
         self._bind_sockets()
 
-        self._logger.info('ok!')
+        # Main loop
+        try:
+            self._logger.info('RIP Daemon started.')
+            while True:
+                # Do things here
+                pass
 
-        # Close sockets
-        self._close_sockets()
+        except KeyboardInterrupt:
+            self._logger.info("Exiting RIP Daemon.")
+
+        except Exception:
+            self._logger.error("An error occurred:\n%s",
+                               traceback.format_exc())
+
+        finally:
+            self._close_sockets()
 
 
 if __name__ == "__main__":
