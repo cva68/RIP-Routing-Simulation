@@ -6,6 +6,7 @@
 """
 
 import logging
+from socket import socket, AF_INET, SOCK_DGRAM, error
 from _configloader import ConfigLoader
 
 LOG_LEVEL = logging.INFO
@@ -21,6 +22,7 @@ class RIPDaemon:
         """
         self._config_loader = ConfigLoader(config_file)
         self._logger = self._setup_logger(log_level)
+        self._sockets = []
 
     def _setup_logger(self, log_level: int):
         """
@@ -38,14 +40,52 @@ class RIPDaemon:
 
         return logger
 
-    def start(self):
-        router_info = self._config_loader.get_router_info()
-        peer_info = self._config_loader.get_peer_info()
+    def _bind_sockets(self):
+        """
+            Try bind to each input port from the configuration file
+        """
+        for port in self._ports:
+            try:
+                self._sockets.append(socket(AF_INET, SOCK_DGRAM))
+                self._sockets[-1].setblocking(1)
+                self._sockets[-1].settimeout(1)
+            except error:
+                self._logger.critical("Socket creation failed")
+                self.exit(1)
+            
+            try:
+                self._sockets[-1].bind((self._bind, port))
+            except error:
+                self._logger.critical("Socket binding failed")
+                self.exit(1)
 
-        # Test the configuration loader
-        self._logger.info(f"Router ID: {router_info['router_id']}")
-        self._logger.info(f"Incoming Ports: {router_info['incoming_ports']}")
-        self._logger.info(f"Peer Information: {peer_info}")
+    def _close_sockets(self):
+        """
+            Close all sockets
+        """
+        for sock in self._sockets:
+            sock.close()
+
+    def start(self):
+        """
+            Start the RIP Daemon.
+        """
+        # Load router config
+        router_info = self._config_loader.get_router_info()
+        self._id = router_info['router_id']
+        self._ports = router_info['incoming_ports']
+        self._bind = router_info['bind']
+
+        # Load peer config
+        self._peer_info = self._config_loader.get_peer_info()
+
+        # Bind sockets
+        self._bind_sockets()
+
+        self._logger.info('ok!')
+
+        # Close sockets
+        self._close_sockets()
 
 
 if __name__ == "__main__":
