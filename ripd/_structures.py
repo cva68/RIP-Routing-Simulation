@@ -5,6 +5,7 @@
 """
 
 from ._helpers import IPTools
+from ._exceptions import PacketParseError
 
 HEADER_LENGTH = 4
 ENTRY_LENGTH = 20
@@ -27,7 +28,12 @@ class RIPPacket:
         """
             Construct a RIP packet.
 
-            :returns: Bytearray of the RIP packet.
+            :param command: The command field of the RIP packet (e.g., request
+                            or response).
+            :param entries: A list of RIPEntry elements to include in the
+                            packet.
+            :param version: The RIP version number (default is VERSION).
+            :returns: Bytearray of the constructed RIP packet.
         """
         # Calculate the length of the packet and initialize the bytearray
         packet_length = HEADER_LENGTH + len(entries) * ENTRY_LENGTH
@@ -53,6 +59,7 @@ class RIPPacket:
 
             :returns: The command (PacketCommand), and a list of
             RIPEntry objects.
+            :raises: PacketParseError if the packet is invalid.
         """
         # Parse the header
         command = packet[0]
@@ -60,11 +67,11 @@ class RIPPacket:
 
         # Verify the version matches the version of this implementation
         if version != VERSION:
-            raise ValueError("Invalid RIP version")
+            raise PacketParseError("Invalid RIP version in packet")
 
         # Verify we've received a valid command
         if command not in [PacketCommands.REQUEST, PacketCommands.RESPONSE]:
-            raise ValueError("Invalid RIP command")
+            raise PacketParseError("Invalid RIP command in packet")
 
         # If the command is a request, return an empty list. The
         # response to this request will be handled upstream.
@@ -74,9 +81,12 @@ class RIPPacket:
         # Parse the entries
         entries = []
         for i in range(4, len(packet), ENTRY_LENGTH):
-            entry = RIPEntry(address=packet[i:i + ENTRY_LENGTH],
-                             metric=packet[i + ENTRY_LENGTH - 1])
-            entries.append(entry)
+            try:
+                ip = IPTools.bytes_to_ip(packet[i + 4:i + 8])
+                metric = int.from_bytes(packet[i + 16:i + 20], 'big')
+            except IndexError:
+                raise PacketParseError("Invalid packet length")
+            entries.append(RIPEntry(ip, metric))
 
         return PacketCommands.RESPONSE, entries
 
@@ -111,15 +121,3 @@ class RIPEntry:
 
         print(len(packet))
         return packet
-
-
-if __name__ == "__main__":
-    # Test the RIPEntry class
-    # Something is wrong, ran out of time to fix.
-    entry = RIPEntry(address="10.192.122.1", metric=1)
-    advertisement = RIPPacket.construct(PacketCommands.RESPONSE, [entry])
-    command, entries = RIPPacket.parse(advertisement)
-    print(command)
-    print(entries[0].address)
-    print(entries[0].metric)
-    print(entries[0].afi)
