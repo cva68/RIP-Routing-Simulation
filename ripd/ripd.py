@@ -7,8 +7,8 @@
 
 import logging
 import traceback
-from socket import socket, AF_INET, SOCK_DGRAM, error
-from ripd._configloader import ConfigLoader
+from _configloader import ConfigLoader
+from _interface import Interface
 
 LOG_LEVEL = logging.DEBUG
 
@@ -21,9 +21,19 @@ class RIPDaemon:
             :param config_file: Path to the configuration file.
             :param log_level: Log level for the RIP Daemon.
         """
+        self._logger.debug("Loading configuration file.")
         self._config_loader = ConfigLoader(config_file)
         self._logger = self._setup_logger(log_level)
         self._sockets = []
+
+        # Load router config
+        router_info = self._config_loader.get_router_info()
+        self._id = router_info['router_id']
+        self._ports = router_info['incoming_ports']
+        self._bind = router_info['bind']
+
+        # Load peer config
+        self._peer_info = self._config_loader.get_peer_info()
 
     def _setup_logger(self, log_level: int):
         """
@@ -41,58 +51,21 @@ class RIPDaemon:
 
         return logger
 
-    def _bind_sockets(self):
-        """
-            Try bind to each input port from the configuration file
-        """
-        for port in self._ports:
-            try:
-                self._logger.debug("Binding to port %d", port)
-                self._sockets.append(socket(AF_INET, SOCK_DGRAM))
-                self._sockets[-1].setblocking(1)
-                self._sockets[-1].settimeout(1)
-            except error:
-                self._logger.critical("Socket creation failed")
-                self.exit(1)
-
-            try:
-                self._logger.debug("Binding to %s:%d", self._bind, port)
-                self._sockets[-1].bind((self._bind, port))
-            except error:
-                self._logger.critical("Socket binding failed")
-                self.exit(1)
-
-    def _close_sockets(self):
-        """
-            Close all sockets
-        """
-        self._logger.debug("Closing sockets")
-        for sock in self._sockets:
-            sock.close()
-
     def start(self):
         """
             Start the RIP Daemon.
         """
         self._logger.info("Starting RIP Daemon.")
-        self._logger.debug("Loading configuration file.")
-        # Load router config
-        router_info = self._config_loader.get_router_info()
-        self._id = router_info['router_id']
-        self._ports = router_info['incoming_ports']
-        self._bind = router_info['bind']
 
-        # Load peer config
-        self._peer_info = self._config_loader.get_peer_info()
-
-        # Bind sockets
-        self._bind_sockets()
+        # Initialise interface
+        interface = Interface(self._ports, self._bind)
 
         # Main loop
         try:
             self._logger.info('RIP Daemon started.')
             while True:
                 # Do things here
+                # Likely a round-robin scheduller
                 pass
 
         except KeyboardInterrupt:
@@ -103,7 +76,7 @@ class RIPDaemon:
                                traceback.format_exc())
 
         finally:
-            self._close_sockets()
+            interface._close_sockets()
 
 
 if __name__ == "__main__":
