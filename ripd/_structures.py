@@ -4,7 +4,7 @@
     Handlers for RIP packet structures and RIP entry structures.
 """
 
-from _helpers import IPTools
+from ._helpers import IPTools
 
 HEADER_LENGTH = 4
 ENTRY_LENGTH = 20
@@ -74,7 +74,6 @@ class RIPPacket:
         # Parse the entries
         entries = []
         for i in range(4, len(packet), ENTRY_LENGTH):
-            print(len(packet))
             entry = RIPEntry(address=packet[i:i + ENTRY_LENGTH],
                              metric=packet[i + ENTRY_LENGTH - 1])
             entries.append(entry)
@@ -99,18 +98,18 @@ class RIPEntry:
                 Convert the RIP entry to a bytearray.
         """
         # Convert the IP address to a bytearray
-        ip = IPTools.ip_to_bytes(self.address)
+        ip_bytes = IPTools.ip_to_bytes(self.address)
 
         # Create the packet
         packet = bytearray(ENTRY_LENGTH)
-        packet[0] = 0
-        packet[1] = self.afi  # MSB first
+        packet[0:2] = self.afi.to_bytes(2, 'big')
         packet[2] = 0
         packet[3] = 0
-        packet[4:8] = ip
-        packet[8:19] = bytes([0] * 12)
-        packet[19] = self.metric
+        packet[4:8] = ip_bytes
+        packet[8:16] = bytes([0] * 8)
+        packet[16:20] = self.metric.to_bytes(4, 'big')
 
+        print(len(packet))
         return packet
 
 

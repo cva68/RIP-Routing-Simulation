@@ -8,7 +8,7 @@
 import logging
 import traceback
 from socket import socket, AF_INET, SOCK_DGRAM, error
-from _configloader import ConfigLoader
+from ripd._configloader import ConfigLoader
 
 LOG_LEVEL = logging.DEBUG
 
