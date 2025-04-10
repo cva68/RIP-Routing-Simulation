@@ -30,7 +30,7 @@ class InterfaceTestSuite(unittest.TestCase):
                                BIND)
         self.assertIsNotNone(interface1)
         interface1.close_sockets()
-    
+
     def test_broadcast_and_recieve(self):
         """
             Initialise three sockets, broadcast on one, and recieve on two.

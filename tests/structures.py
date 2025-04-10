@@ -55,7 +55,7 @@ class RIPPacketTestSuite(unittest.TestCase):
     """
     def test_initialisation(self):
         """
-            Test the initialisation of a RIP packet, verifying the header 
+            Test the initialisation of a RIP packet, verifying the header
             length.
         """
         packet = RIPPacket.construct(
@@ -90,7 +90,7 @@ class RIPPacketTestSuite(unittest.TestCase):
         self.assertEqual(entries[0].metric, entry1.metric)
         self.assertEqual(entries[1].address, entry2.address)
         self.assertEqual(entries[1].metric, entry2.metric)
-    
+
     def test_parse_invalid_packet(self):
         """
             Test the parsing of an invalid packet.
