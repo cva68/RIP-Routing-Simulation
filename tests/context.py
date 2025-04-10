@@ -13,3 +13,4 @@ from ripd._helpers import IPTools
 from ripd._configloader import ConfigLoader
 from ripd._exceptions import *
 from ripd.ripd import RIPDaemon
+from ripd._interface import Interface

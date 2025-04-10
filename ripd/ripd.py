@@ -7,8 +7,8 @@
 
 import logging
 import traceback
-from _configloader import ConfigLoader
-from _interface import Interface
+from ._configloader import ConfigLoader
+from ._interface import Interface
 
 LOG_LEVEL = logging.DEBUG
 
