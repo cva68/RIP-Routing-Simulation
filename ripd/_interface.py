@@ -2,7 +2,8 @@ import logging
 from socket import socket, AF_INET, SOCK_DGRAM, error
 import select
 import sys
-import time  # temporary
+
+POLL_TIMEOUT = 5000  # Timeout on recieving incoming packets
 
 
 class Interface:
@@ -15,7 +16,6 @@ class Interface:
                  incoming_ports: list,
                  outgoing_ports: list,
                  bind_address: str,
-                 poll_rate=5000
                  ):
         """
         Initialize the Interface class.
@@ -30,17 +30,17 @@ class Interface:
 
         # Create sockets
         self._incoming_sockets = []
-        self._bind_incoming_sockets(poll_rate)
+        self._bind_incoming_sockets()
 
         # Create a socket for outgoing packets
         self._socket = socket(AF_INET, SOCK_DGRAM)
 
-    def _bind_incoming_sockets(self, poll_rate):
+    def _bind_incoming_sockets(self):
         """
             Try bind to each input port from the configuration file, and
             to the bind address of this router.
         """
-        poller = select.poll()  # Create a polle
+        self._poller = select.poll()  # Create a polle
         for port in self._incoming_ports:
             # Create sockets
             try:
@@ -48,7 +48,10 @@ class Interface:
                 self._incoming_sockets.append(socket(AF_INET, SOCK_DGRAM))
                 self._incoming_sockets[-1].setblocking(1)
                 self._incoming_sockets[-1].settimeout(1)
-                poller.register(self._incoming_sockets[-1], select.POLLIN)
+                self._poller.register(
+                    self._incoming_sockets[-1],
+                    select.POLLIN
+                    )
             except error:
                 self._logger.critical("Socket creation failed")
                 sys.exit(1)
@@ -60,9 +63,6 @@ class Interface:
             except error:
                 self._logger.critical("Socket binding failed")
                 sys.exit(1)
-        
-        # Start the poller
-        self._incoming_events = poller.poll(poll_rate)
 
     def close_sockets(self):
         """
@@ -94,18 +94,18 @@ class Interface:
             Poll all incoming ports for available UDP packets
             To be called by scheduller
         """
+        incoming_events = self._poller.poll(POLL_TIMEOUT)
         recieved_packets = []
-        for event_socket, event in self._incoming_events:
-            # self._incoming_events is always empty
-            raise NotImplementedError  # continue from here
-            # If we have received an event
+
+        for event_socket, event in incoming_events:
+            # Stop if no events  we have received an event
             if not (event and select.POLLIN):
-                return  # [] (useful to return None for debugging)
+                continue
 
             # Check each of our registered sockets for a match
             for registered_socket in self._incoming_sockets:
                 # If this isn't the socket we received data on, continue
-                if event_socket == registered_socket.fileno():
+                if event_socket != registered_socket.fileno():
                     continue
 
                 # Otherwise, get data from the socket and return it
@@ -115,26 +115,3 @@ class Interface:
                 recieved_packets.append(registered_socket.recvfrom(4096))
 
         return recieved_packets
-
-
-if __name__ == "__main__":
-    INCOMING_PORTS = [8084, 8085]
-    OUTGOING_PORTS = [8086, 8087]
-    BIND = "127.0.0.1"
-    interface1 = Interface(INCOMING_PORTS, OUTGOING_PORTS, BIND)
-    interface2 = Interface(OUTGOING_PORTS, INCOMING_PORTS, BIND)
-
-    interface1.broadcast(b'Hello!')
-    time.sleep(1)
-    data = []
-    try:
-        while data == []:
-            data = interface1.poll_incoming_ports()
-        print(data)
-    except KeyboardInterrupt:
-        interface1.close_sockets()
-        interface2.close_sockets()
-        sys.exit(1)
-
-    interface1.close_sockets()
-    interface2.close_sockets()
