@@ -5,7 +5,7 @@
 
 import unittest
 
-from context import Interface
+from test.context import Interface
 
 # Define some ports for test routers
 INTERFACE1_INCOMING_PORTS = [8080, 8081, 8082]
@@ -46,7 +46,7 @@ class InterfaceTestSuite(unittest.TestCase):
                                BIND)
 
         # 'Broadcast' on interface 1
-        interface1.broadcast(b'Hello!')
+        interface1.multicast(b'Hello!')
 
         # Recieve data
         data2, data3 = [], []

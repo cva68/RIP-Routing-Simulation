@@ -5,7 +5,7 @@
 
 import unittest
 
-from context import (
+from test.context import (
     PacketCommands,
     RIPPacket,
     RIPEntry,

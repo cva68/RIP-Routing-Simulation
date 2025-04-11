@@ -15,7 +15,7 @@ class Interface:
     def __init__(self,
                  incoming_ports: list,
                  outgoing_ports: list,
-                 bind_address: str,
+                 bind_address="127.0.0.1",
                  ):
         """
         Initialize the Interface class.
@@ -33,7 +33,7 @@ class Interface:
         self._bind_incoming_sockets()
 
         # Create a socket for outgoing packets
-        self._socket = socket(AF_INET, SOCK_DGRAM)
+        self._outgoing_socket = socket(AF_INET, SOCK_DGRAM)
 
     def _bind_incoming_sockets(self):
         """
@@ -72,22 +72,28 @@ class Interface:
         try:
             for sock in self._incoming_sockets:
                 sock.close()
-            self._socket.close()
+            self._outgoing_socket.close()
         except error:
             self._logger.critical("Failed to close sockets.")
             sys.exit(1)
 
-    def broadcast(self, packet):
+    def unicast(self, packet, port):
         """
-            'Broadcast' a packet to all other routers.
+            Transmit a packet to a single other interface.
+        """
+        try:
+            # getsockname()[1] is the port
+            self._outgoing_socket.sendto(packet, (self._bind, port))
+        except error:
+            self._logger.critical("Socket send failed")
+            sys.exit(1)
+
+    def multicast(self, packet):
+        """
+            Multicast a packet to all other interfaces.
         """
         for port in self._outgoing_ports:
-            try:
-                # getsockname()[1] is the port
-                self._socket.sendto(packet, (self._bind, port))
-            except error:
-                self._logger.critical("Socket send failed")
-                sys.exit(1)
+            self.unicast(packet, port)
 
     def poll_incoming_ports(self):
         """
