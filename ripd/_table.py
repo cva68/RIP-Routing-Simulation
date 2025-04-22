@@ -45,7 +45,7 @@ class RouteTable:
             If the route already exists,
             update it with the new metric and timeout.
         """
-        timeout = time.time() + 180  
+        timeout = time.time() + 180
         entry = RouteEntry(destination, next_hop, metric, timeout)
         self.routes.append(entry)
 
