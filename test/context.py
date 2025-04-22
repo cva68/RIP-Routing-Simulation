@@ -14,3 +14,4 @@ from ripd._configloader import ConfigLoader
 from ripd._exceptions import *
 from ripd.ripd import RIPDaemon
 from ripd._interface import Interface
+from ripd._table import *
