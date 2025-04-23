@@ -5,9 +5,13 @@ processes communicate through local sockets. Designed for emulation of a small n
 and exploring the response of the RIP protocol to different types of faults.
 
 ## Usage
-1. Populate config files. For examples, see [/config](config).
+1. Install requirements
+```bash
+pip3 install tabulate
+```
+2. Populate config files. For examples, see [/config](config).
 
-2. Start the 'routers'. For each config file, run the below: 
+3. Start the 'routers'. For each config file, run the below: 
 ```python3
 python3 main.py /path/to/config.ini
 ```
