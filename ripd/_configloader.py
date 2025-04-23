@@ -40,11 +40,11 @@ class ConfigLoader:
                 int(self._config['ROUTER']['periodic_update_time'])
             router_info['garbage_collection_time'] = \
                 int(self._config['ROUTER']['garbage_collection_time'])
-            
+
             router_info['timeout'] = int(self._config['ROUTER']['timeout'])
 
             return router_info
-        
+
         except (KeyError, ValueError):
             self._logger.critical("Invalid configuration file.")
             sys.exit(1)
