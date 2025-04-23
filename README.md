@@ -1,18 +1,13 @@
 # COSC364 RIP Assignment
-#   CCCCCCCCC    OOOOOOOOO   SSSSSSSSS    CCCCCCCCC  
-#  CCC     CCC  OOO     OOO SSS     SSS  CCC     CCC 
-# CC         CC OO       OO SS          CC         CC
-# CC            OO       OO  SSSSS      CC          
-# CC            OO       OO      SSS    CC          
-# CC         CC OO       OO SSS     SSS CC         CC
-#  CCC     CCC  OOO     OOO SSS     SSS  CCC     CCC 
-#   CCCCCCCCC    OOOOOOOOO   SSSSSSSSS    CCCCCCCCC  
+An implementation of parts of the RIP routing protocol, designed to run as several
+instances on the same machine. Each instance runs as a separate process, and these
+processes communicate through local sockets. Designed for emulation of a small network,
+and exploring the response of the RIP protocol to different types of faults.
 
-#   333333333   666666666     44444  
-#  33       33 66       66  44    44  
-#           33 66          44     44  
-#         333  66   66666  444444444  
-#           33 66       66        44  
-#  33       33 66       66        44  
-#   333333333   666666666         44   
+## Usage
+1. Populate config files. For examples, see [/config](config).
 
+2. Start the 'routers'. For each config file, run the below: 
+```python3
+python3 main.py /path/to/config.ini
+```
