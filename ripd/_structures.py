@@ -105,6 +105,19 @@ class RIPEntry:
         self.metric = metric
         self.afi = afi
 
+    def __str__(self):
+        """
+            String representation of the RIP entry.
+        """
+        return f"RIPEntry(id={self.id}, metric={self.metric}, " \
+               f"afi={self.afi})"
+
+    def __repr__(self):
+        """
+            String representation of the RIP entry.
+        """
+        return self.__str__()
+
     def as_packet(self):
         """
             Convert the RIP entry to a bytearray.

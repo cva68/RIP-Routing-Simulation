@@ -70,11 +70,6 @@ class RIPDaemon:
         # Initialise interface
         self._interface = Interface(self._logger, self._ports, self._bind)
 
-        # Add this router to the table, with metric 0
-        self._table.add_route(destination_id=self._id,
-                              next_hop_id=self._id,
-                              metric=0)
-
         # Set up periodic update timer
         self._next_periodic_update = time.time()
 
@@ -149,7 +144,7 @@ class RIPDaemon:
             # Unpack the packet
             _command, router_id, entries = parse_result
             self._logger.debug(f"Parsed packet: {_command}, {router_id}," +
-                               "{entries}")
+                               f"{entries}")
 
             # Add entries to the routing table
             for entry in entries:

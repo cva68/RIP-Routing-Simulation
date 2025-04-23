@@ -116,8 +116,8 @@ class Interface:
                     continue
 
                 # Otherwise, get data from the socket and return it
-                self._logger.info(f'Recieved packet on port \
-                                    {registered_socket.getsockname()[1]}')
+                self._logger.info('Recieved packet on port' +
+                                  f' {registered_socket.getsockname()[1]}')
                 # likely need to change this 4096, and include the src port
                 recieved_packets.append(registered_socket.recvfrom(4096))
 
