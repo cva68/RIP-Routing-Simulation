@@ -4,7 +4,6 @@
     Handlers for RIP packet structures and RIP entry structures.
 """
 
-from ._helpers import IPTools
 from ._exceptions import PacketParseError
 
 HEADER_LENGTH = 4
@@ -24,7 +23,8 @@ class RIPPacket:
     """
 
     @staticmethod
-    def construct(command: int, entries: list = [], version: int = VERSION):
+    def construct(command: int, router_id: int,
+                  entries: list = [], version: int = VERSION):
         """
             Construct a RIP packet.
 
@@ -42,8 +42,7 @@ class RIPPacket:
         # Construct the header
         packet[0] = command
         packet[1] = version
-        packet[2] = 0
-        packet[3] = 0
+        packet[2:4] = router_id.to_bytes(2, 'big')
 
         # Construct the entries
         for i, entry in enumerate(entries):
@@ -57,13 +56,16 @@ class RIPPacket:
         """
             Deconstruct a RIP packet.
 
-            :returns: The command (PacketCommand), and a list of
-            RIPEntry objects.
+            :returns: The command (PacketCommand), the ID of the sender, and a
+            list of RIPEntry objects.
             :raises: PacketParseError if the packet is invalid.
         """
         # Parse the header
         command = packet[0]
         version = packet[1]
+
+        # Parse the router ID
+        router_id = int.from_bytes(packet[2:4], 'big')
 
         # Verify the version matches the version of this implementation
         if version != VERSION:
@@ -76,48 +78,45 @@ class RIPPacket:
         # If the command is a request, return an empty list. The
         # response to this request will be handled upstream.
         if command == PacketCommands.REQUEST:
-            return PacketCommands.REQUEST, []
+            return PacketCommands.REQUEST, router_id, []
 
         # Parse the entries
         entries = []
         for i in range(4, len(packet), ENTRY_LENGTH):
             try:
-                ip = IPTools.bytes_to_ip(packet[i + 4:i + 8])
+                id = int.from_bytes(packet[i + 4:i + 8], 'big')
                 metric = int.from_bytes(packet[i + 16:i + 20], 'big')
             except IndexError:
                 raise PacketParseError("Invalid packet length")
-            entries.append(RIPEntry(ip, metric))
+            entries.append(RIPEntry(id, metric))
 
-        return PacketCommands.RESPONSE, entries
+        return PacketCommands.RESPONSE, router_id, entries
 
 
 class RIPEntry:
     """
         Basic structure for a RIP entry.
     """
-    def __init__(self, address, metric, afi=ADDRESS_FAMILY):
+    def __init__(self, id, metric, afi=ADDRESS_FAMILY):
         """
             Initialize a RIP entry.
         """
-        self.address = address
+        self.id = id
         self.metric = metric
         self.afi = afi
 
     def as_packet(self):
         """
-                Convert the RIP entry to a bytearray.
-        """
-        # Convert the IP address to a bytearray
-        ip_bytes = IPTools.ip_to_bytes(self.address)
+            Convert the RIP entry to a bytearray.
 
-        # Create the packet
+            :returns: Bytearray of the RIP entry.
+        """
         packet = bytearray(ENTRY_LENGTH)
         packet[0:2] = self.afi.to_bytes(2, 'big')
         packet[2] = 0
         packet[3] = 0
-        packet[4:8] = ip_bytes
+        packet[4:8] = self.id.to_bytes(4, 'big')
         packet[8:16] = bytes([0] * 8)
         packet[16:20] = self.metric.to_bytes(4, 'big')
 
-        print(len(packet))
         return packet

@@ -4,6 +4,7 @@
 """
 
 import unittest
+import logging
 
 from test.context import Interface
 
@@ -21,11 +22,15 @@ class InterfaceTestSuite(unittest.TestCase):
     """
         Interface test suite.
     """
+    def setUp(self):
+        self.logger = logging.getLogger(__name__)
+
     def test_initialisation(self):
         """
             Test the initialisation of a RIP entry.
         """
-        interface1 = Interface(INTERFACE1_INCOMING_PORTS,
+        interface1 = Interface(self.logger,
+                               INTERFACE1_INCOMING_PORTS,
                                INTERFACE1_OUTGOING_PORTS,
                                BIND)
         self.assertIsNotNone(interface1)
@@ -35,13 +40,16 @@ class InterfaceTestSuite(unittest.TestCase):
         """
             Initialise three sockets, broadcast on one, and recieve on two.
         """
-        interface1 = Interface(INTERFACE1_INCOMING_PORTS,
+        interface1 = Interface(self.logger,
+                               INTERFACE1_INCOMING_PORTS,
                                INTERFACE1_OUTGOING_PORTS,
                                BIND)
-        interface2 = Interface(INTERFACE2_INCOMING_PORTS,
+        interface2 = Interface(self.logger,
+                               INTERFACE2_INCOMING_PORTS,
                                INTERFACE2_OUTGOING_PORTS,
                                BIND)
-        interface3 = Interface(INTERFACE3_INCOMING_PORTS,
+        interface3 = Interface(self.logger,
+                               INTERFACE3_INCOMING_PORTS,
                                INTERFACE3_OUTGOING_PORTS,
                                BIND)
 

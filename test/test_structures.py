@@ -26,22 +26,22 @@ class RIPEntryTestSuite(unittest.TestCase):
         """
             Test the initialisation of a RIP entry.
         """
-        entry = RIPEntry(address="10.192.122.1", metric=1)
-        self.assertEqual(entry.address, "10.192.122.1")
+        entry = RIPEntry(id=1, metric=1)
+        self.assertEqual(entry.id, 1)
         self.assertEqual(entry.metric, 1)
 
     def test_packet_formation(self):
         """
             Test the formation of a RIP *entry* packet.
         """
-        entry = RIPEntry(address="10.192.122.1", metric=1)
+        entry = RIPEntry(id=1, metric=1)
         packet = entry.as_packet()
         self.assertEqual(len(packet), 20)  # 20 bytes
         self.assertEqual(packet[0], 0)     # LSB should be 0
         self.assertEqual(packet[1], ADDRESS_FAMILY)  # AFI should be 2
         self.assertEqual(packet[2], 0)     # Reserved
         self.assertEqual(packet[3], 0)     # Reserved
-        self.assertEqual(packet[4:8], bytes([10, 192, 122, 1]))  # IP address
+        self.assertEqual(packet[4:8], bytes([0, 0, 0, 1]))  # ID
         self.assertEqual(packet[8:16], bytes([0] * 8))  # Reserved
         self.assertEqual(
             packet[16:20],
@@ -59,6 +59,7 @@ class RIPPacketTestSuite(unittest.TestCase):
             length.
         """
         packet = RIPPacket.construct(
+            router_id=1,
             command=PacketCommands.REQUEST,
             entries=[],
             version=VERSION
@@ -72,10 +73,11 @@ class RIPPacketTestSuite(unittest.TestCase):
             Construct a packet, then parse it back into its components.
             Verify the components match the original packet.
         """
-        entry1 = RIPEntry(address="10.192.122.1", metric=1)
-        entry2 = RIPEntry(address="10.192.122.2", metric=1)
+        entry1 = RIPEntry(id=2, metric=1)
+        entry2 = RIPEntry(id=3, metric=1)
 
         packet = RIPPacket.construct(
+            router_id=1,
             command=PacketCommands.RESPONSE,
             entries=[entry1, entry2],
             version=VERSION
@@ -83,12 +85,13 @@ class RIPPacketTestSuite(unittest.TestCase):
 
         self.assertEqual(len(packet), 44)  # 4B header, 2 entries
 
-        command, entries = RIPPacket.parse(packet)
+        command, router_id, entries = RIPPacket.parse(packet)
         self.assertEqual(command, PacketCommands.RESPONSE)
+        self.assertEqual(router_id, 1)
         self.assertEqual(len(entries), 2)
-        self.assertEqual(entries[0].address, entry1.address)
+        self.assertEqual(entries[0].id, entry1.id)
         self.assertEqual(entries[0].metric, entry1.metric)
-        self.assertEqual(entries[1].address, entry2.address)
+        self.assertEqual(entries[1].id, entry2.id)
         self.assertEqual(entries[1].metric, entry2.metric)
 
     def test_parse_invalid_packet(self):

@@ -1,4 +1,3 @@
-import logging
 from socket import socket, AF_INET, SOCK_DGRAM, error
 import select
 import sys
@@ -12,7 +11,7 @@ class Interface:
         Used to bind ports and handle incoming packets.
     """
 
-    def __init__(self,
+    def __init__(self, logger,
                  incoming_ports: list,
                  outgoing_ports: list,
                  bind_address="127.0.0.1",
@@ -26,7 +25,7 @@ class Interface:
         self._outgoing_ports = outgoing_ports
 
         # Configure logging
-        self._logger = logging.getLogger(__name__)
+        self._logger = logger
 
         # Create sockets
         self._incoming_sockets = []
@@ -44,7 +43,7 @@ class Interface:
         for port in self._incoming_ports:
             # Create sockets
             try:
-                self._logger.debug(f"Creating socket on {port}")
+                self._logger.debug(f"Creating socket on port {port}")
                 self._incoming_sockets.append(socket(AF_INET, SOCK_DGRAM))
                 self._incoming_sockets[-1].setblocking(1)
                 self._incoming_sockets[-1].settimeout(1)
@@ -57,12 +56,12 @@ class Interface:
                 sys.exit(1)
 
             # These are servers - bind sockets to ports
-            try:
-                self._logger.debug(f"Binding to {self._bind}:{port}")
-                self._incoming_sockets[-1].bind((self._bind, port))
-            except error:
-                self._logger.critical("Socket binding failed")
-                sys.exit(1)
+            # try:
+            self._logger.debug(f"Binding to {self._bind}:{port}")
+            self._incoming_sockets[-1].bind((self._bind, port))
+            # except error:
+            #     self._logger.critical("Socket binding failed")
+            #     sys.exit(1)
 
     def close_sockets(self):
         """
@@ -99,6 +98,8 @@ class Interface:
         """
             Poll all incoming ports for available UDP packets
             To be called by scheduller
+
+            :returns: List of tuples containing the socket and the data
         """
         incoming_events = self._poller.poll(POLL_TIMEOUT)
         recieved_packets = []
