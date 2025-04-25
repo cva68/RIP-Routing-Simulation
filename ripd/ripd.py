@@ -10,7 +10,8 @@ import traceback
 import time
 import os
 from ._configloader import ConfigLoader
-from ._structures import RIPPacket, PacketVersionError, PacketCommandError, PacketParseError
+from ._structures import (RIPPacket, PacketVersionError, PacketCommandError,
+                          PacketParseError)
 from ._interface import Interface
 from ._table import RouteTable
 
@@ -155,7 +156,7 @@ class RIPDaemon:
                     as e:
                 self._logger.error(f"Failed to parse incoming packet: {e}.")
                 self._logger.debug("Packet data: %s", packet_data)
-                continue
+                continue  # Drop the packet and continue
 
             # Unpack the packet
             _command, source_router_id, entries = parse_result
