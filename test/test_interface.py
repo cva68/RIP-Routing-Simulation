@@ -31,7 +31,6 @@ class InterfaceTestSuite(unittest.TestCase):
         """
         interface1 = Interface(self.logger,
                                INTERFACE1_INCOMING_PORTS,
-                               INTERFACE1_OUTGOING_PORTS,
                                BIND)
         self.assertIsNotNone(interface1)
         interface1.close_sockets()
@@ -42,19 +41,17 @@ class InterfaceTestSuite(unittest.TestCase):
         """
         interface1 = Interface(self.logger,
                                INTERFACE1_INCOMING_PORTS,
-                               INTERFACE1_OUTGOING_PORTS,
                                BIND)
         interface2 = Interface(self.logger,
                                INTERFACE2_INCOMING_PORTS,
-                               INTERFACE2_OUTGOING_PORTS,
                                BIND)
         interface3 = Interface(self.logger,
                                INTERFACE3_INCOMING_PORTS,
-                               INTERFACE3_OUTGOING_PORTS,
                                BIND)
 
-        # 'Broadcast' on interface 1
-        interface1.multicast(b'Hello!')
+        # On interface 1, send packets
+        for port in INTERFACE1_OUTGOING_PORTS:
+            interface1.unicast(b'Hello!', port)
 
         # Recieve data
         data2, data3 = [], []

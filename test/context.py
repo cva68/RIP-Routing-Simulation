@@ -10,7 +10,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from ripd._structures import *
 from ripd._configloader import ConfigLoader
-from ripd._exceptions import *
 from ripd.ripd import RIPDaemon
 from ripd._interface import Interface
 from ripd._table import *

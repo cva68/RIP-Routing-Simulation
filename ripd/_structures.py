@@ -4,8 +4,6 @@
     Handlers for RIP packet structures and RIP entry structures.
 """
 
-from ._exceptions import PacketParseError
-
 HEADER_LENGTH = 4
 ENTRY_LENGTH = 20
 ADDRESS_FAMILY = 2
@@ -60,24 +58,28 @@ class RIPPacket:
             list of RIPEntry objects.
             :raises: PacketParseError if the packet is invalid.
         """
-        # Parse the header
-        command = packet[0]
-        version = packet[1]
+        try:
+            # Parse the header
+            command = packet[0]
+            version = packet[1]
 
-        # Parse the router ID
-        router_id = int.from_bytes(packet[2:4], 'big')
+            # Parse the router ID
+            router_id = int.from_bytes(packet[2:4], 'big')
+        except IndexError:  # Invalid length
+            raise PacketParseError("Unable to read packet header")
 
         # Verify the version matches the version of this implementation
         if version != VERSION:
-            raise PacketParseError("Invalid RIP version in packet")
+            raise PacketVersionError("Invalid RIP version in packet")
 
         # Verify we've received a valid command
         if command not in [PacketCommands.REQUEST, PacketCommands.RESPONSE]:
-            raise PacketParseError("Invalid RIP command in packet")
+            raise PacketCommandError("Invalid RIP command in packet")
 
         # If the command is a request, return an empty list. The
         # response to this request will be handled upstream.
         if command == PacketCommands.REQUEST:
+            raise PacketCommandError  # Requests not used for this assignment
             return PacketCommands.REQUEST, router_id, []
 
         # Parse the entries
@@ -133,3 +135,21 @@ class RIPEntry:
         packet[16:20] = self.metric.to_bytes(4, 'big')
 
         return packet
+
+
+class PacketParseError(Exception):
+    """Exception raised for errors encountered while parsing a packet."""
+    def __init__(self, message="Error occurred while parsing the packet"):
+        super().__init__(message)
+
+
+class PacketCommandError(Exception):
+    """Exception raised for unexpected commands."""
+    def __init__(self, message="Error occurred while reading packet command"):
+        super().__init__(message)
+
+
+class PacketVersionError(Exception):
+    """Exception raised for unexpected version numbers."""
+    def __init__(self, message="Error occurred while parsing the packet"):
+        super().__init__(message)

@@ -13,7 +13,6 @@ class Interface:
 
     def __init__(self, logger,
                  incoming_ports: list,
-                 outgoing_ports: list,
                  bind_address="127.0.0.1",
                  ):
         """
@@ -22,7 +21,6 @@ class Interface:
         # Store paramaters
         self._bind = bind_address
         self._incoming_ports = incoming_ports
-        self._outgoing_ports = outgoing_ports
 
         # Configure logging
         self._logger = logger
@@ -86,13 +84,6 @@ class Interface:
         except error:
             self._logger.critical("Socket send failed")
             sys.exit(1)
-
-    def multicast(self, packet):
-        """
-            Multicast a packet to all other interfaces.
-        """
-        for port in self._outgoing_ports:
-            self.unicast(packet, port)
 
     def poll_incoming_ports(self):
         """

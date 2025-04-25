@@ -10,7 +10,7 @@ import traceback
 import time
 import os
 from ._configloader import ConfigLoader
-from ._structures import RIPPacket
+from ._structures import RIPPacket, PacketVersionError, PacketCommandError, PacketParseError
 from ._interface import Interface
 from ._table import RouteTable
 
@@ -36,7 +36,6 @@ class RIPDaemon:
         router_info = self._config_loader.get_router_info()
         self._id = router_info['router_id']
         self._ports = router_info['incoming_ports']
-        self._bind = router_info['bind']
         self._periodic_update_time = router_info['periodic_update_time']
         self._garbage_collection_time = router_info['garbage_collection_time']
         self._timeout = router_info['timeout']
@@ -71,7 +70,7 @@ class RIPDaemon:
         self._logger.info("Starting RIP Daemon.")
 
         # Initialise interface
-        self._interface = Interface(self._logger, self._ports, self._bind)
+        self._interface = Interface(self._logger, self._ports)
 
         # Set up periodic update timer and table print timer
         self._next_periodic_update = time.time()
@@ -150,11 +149,11 @@ class RIPDaemon:
             packet_data = packet[0]
 
             # Attempt to parse the packet
-            parse_result = RIPPacket.parse(packet_data)
-
-            # On error, log and continue
-            if not parse_result:
-                self._logger.error("Failed to parse incoming packet.")
+            try:
+                parse_result = RIPPacket.parse(packet_data)
+            except (PacketVersionError, PacketCommandError, PacketParseError) \
+                    as e:
+                self._logger.error(f"Failed to parse incoming packet: {e}.")
                 self._logger.debug("Packet data: %s", packet_data)
                 continue
 
@@ -192,9 +191,14 @@ class RIPDaemon:
                         if self._table.routes[entry.id].metric == 16:
                             continue
 
+                        # Otherwise, set the timeout of the entry to now, to
+                        # trigger the garbage collection timer
                         timeout = time.time() - self._timeout
                         self._table.routes[entry.id].timeout = timeout
+
                     else:
+                        # If this route doesn't have metric 16, use normal
+                        # timeout val
                         self._table.routes[entry.id].timeout = time.time()
 
                     self._table.routes[entry.id].metric = new_metric

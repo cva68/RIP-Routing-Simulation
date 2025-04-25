@@ -9,7 +9,9 @@ from test.context import (
     PacketCommands,
     RIPPacket,
     RIPEntry,
-    PacketParseError
+    PacketParseError,
+    PacketCommandError,
+    PacketVersionError
 )
 
 HEADER_LENGTH = 4
@@ -100,7 +102,7 @@ class RIPPacketTestSuite(unittest.TestCase):
             This should raise an exception.
         """
         # Try an empty packet
-        invalid_packet = bytearray(10)
+        invalid_packet = bytearray(0)
         self.assertRaises(
             PacketParseError,
             RIPPacket.parse,
@@ -108,10 +110,11 @@ class RIPPacketTestSuite(unittest.TestCase):
         )
 
         # Try a packet with an invalid command
+        invalid_packet = bytearray(10)
         invalid_packet[0] = 99
         invalid_packet[1] = VERSION
         self.assertRaises(
-            PacketParseError,
+            PacketCommandError,
             RIPPacket.parse,
             invalid_packet
         )
@@ -120,7 +123,7 @@ class RIPPacketTestSuite(unittest.TestCase):
         invalid_packet[0] = PacketCommands.REQUEST
         invalid_packet[1] = 99
         self.assertRaises(
-            PacketParseError,
+            PacketVersionError,
             RIPPacket.parse,
             invalid_packet
         )

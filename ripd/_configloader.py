@@ -30,8 +30,7 @@ class ConfigLoader:
             router_info = {}
             router_info['router_id'] = int(self._config['ROUTER']['id'])
             incoming_ports = self._config['ROUTER']['incoming_ports']
-            router_info['bind'] = self._config['ROUTER']['bind']
-
+            
             router_info['incoming_ports'] = incoming_ports.split(', ')
             for i, port in enumerate(router_info['incoming_ports']):
                 router_info['incoming_ports'][i] = int(port)
