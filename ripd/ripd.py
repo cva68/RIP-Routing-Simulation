@@ -8,13 +8,14 @@
 import logging
 import traceback
 import time
+import os
 from ._configloader import ConfigLoader
 from ._structures import RIPPacket
 from ._interface import Interface
 from ._table import RouteTable
 
 LOG_LEVEL = logging.DEBUG
-TABLE_PRINT_PERIOD = 1  # Seconds
+TABLE_PRINT_PERIOD = 0.5  # Seconds
 
 
 class RIPDaemon:
@@ -26,6 +27,7 @@ class RIPDaemon:
             :param log_level: Log level for the RIP Daemon.
         """
         # Start the logger and load the configuration file
+        self._log_level = log_level
         self._logger = self._setup_logger(log_level)
         self._logger.debug("Loading configuration file.")
         self._config_loader = ConfigLoader(self._logger, config_file)
@@ -90,7 +92,10 @@ class RIPDaemon:
 
                 # Periodically print table
                 if time.time() >= self._next_table_print:
-                    self._logger.info(f"Current Table:\n{self._table}")
+                    if self._log_level == logging.INFO:
+                        os.system('clear')
+                    self._logger.info(f"Routing Table for Router {self._id}:" +
+                                      f"\n{self._table}")
                     self._next_table_print = time.time() + TABLE_PRINT_PERIOD
 
                 # Check for timed out entries, and entries that require

@@ -78,15 +78,9 @@ class RouteTable:
             Add a new route to the routing table.
         """
         timeout = time.time() if timeout is None else timeout
-        if destination_id in self.routes.keys():
-            self._logger.warn("Overwriting existing record for router"
-                              + f" {destination_id}")
-
         entry = RouteEntry(destination_id, next_hop_id, metric,
                            timeout, garbage_collection_timer)
         self.routes[destination_id] = entry
-
-        self._logger.info(f"Table contents\n{self}")
 
     def remove_route(self, destination_id):
         """
@@ -98,11 +92,10 @@ class RouteTable:
         # Find the entry with the matching destination and remove it
         try:
             self.routes.pop(destination_id)
-            self._logger.info(f"Table contents\n{self}")
             return True
         except KeyError:
-            self._logger.warning(f"Requested deletion of {destination_id}," +
-                                 " but route does not exist.")
+            self._logger.debug(f"Requested deletion of {destination_id}," +
+                               " but route does not exist.")
             return False
 
     def remove_all(self):
@@ -110,7 +103,6 @@ class RouteTable:
             Remove all routes from the routing table.
         """
         self.routes.clear()
-        self._logger.info(f"Table contents\n{self}")
 
     def get_entry(self, destination_id):
         """
@@ -120,8 +112,8 @@ class RouteTable:
         try:
             return self.routes[destination_id]
         except KeyError:
-            self._logger.warning(f"Requested entry for {destination_id}," +
-                                 " but route does not exist.")
+            self._logger.debug(f"Requested entry for {destination_id}," +
+                               " but route does not exist.")
             return
 
     def get_packet(self, destination_router_id):
@@ -179,10 +171,6 @@ class RouteTable:
         # Remove any entries that have reached garbage collection time
         for router_id in to_remove:
             self.remove_route(router_id)
-
-        # If we've modified the table, print it
-        if to_remove or timed_out:
-            self._logger.info(f"Table contents\n{self}")
 
         # Return true if a triggered update is required for timed out entries
         return timed_out

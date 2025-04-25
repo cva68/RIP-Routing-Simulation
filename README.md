@@ -12,8 +12,13 @@ pip3 install tabulate
 2. Populate config files. For examples, see [/config](config).
 
 3. Start the 'routers'. For each config file, run the below: 
-```python3
+```bash
 python3 main.py /path/to/config.ini
+```
+For more detailed information on periodic / triggered update timing, and the contents of received packets, 
+append the ``--verbose`` or ``-v`` flag:
+```bash
+python3 main.py /path/to/config.ini --verbose
 ```
 
 ## Example Network
