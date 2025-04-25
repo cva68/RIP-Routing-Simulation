@@ -1,6 +1,6 @@
 """
-    Unit tests for the structures module.
-    Author: C. Varney, K. Jones
+    RIP Packet Structure / Entry Structure unit tests.
+    MIT License. Copyright © 2025 Connor Varney, Kahu Jones
 """
 
 import unittest

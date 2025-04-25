@@ -1,8 +1,6 @@
-#!/usr/bin/env python3
-
 """
-    ripd.py
-    Entrypoint for the RIP Daemon
+    RIPDaemon - scheduller and incoming packet handler.
+    MIT License. Copyright © 2025 Connor Varney, Kahu Jones
 """
 
 import logging

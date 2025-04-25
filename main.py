@@ -1,3 +1,8 @@
+"""
+    RIPDaemon entry point.
+    MIT License. Copyright © 2025 Connor Varney, Kahu Jones
+"""
+
 from ripd.ripd import RIPDaemon
 import sys
 import logging

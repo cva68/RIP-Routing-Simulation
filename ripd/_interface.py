@@ -1,3 +1,8 @@
+"""
+    RIPDaemon - UDP interface, for handling multiple outgoing / incoming ports.
+    MIT License. Copyright © 2025 Connor Varney, Kahu Jones
+"""
+
 from socket import socket, AF_INET, SOCK_DGRAM, error
 import select
 import sys

@@ -1,5 +1,8 @@
-# -*- coding: utf-8 -*-
-# Source: https://github.com/navdeep-G/samplemod
+"""
+    Context imports for unit tests
+    Modified from: https://github.com/navdeep-G/samplemod (BSD2)
+"""
+
 # Ignore this file from flake8 - it is used to set up the test environment
 # flake8: noqa
 

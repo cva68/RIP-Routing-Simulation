@@ -1,3 +1,9 @@
+"""
+    RIPDaemon routing table structure, with timeout / garbage
+    collection handling.
+    MIT License. Copyright © 2025 Connor Varney, Kahu Jones
+"""
+
 import time
 from tabulate import tabulate
 from ._structures import RIPEntry, RIPPacket

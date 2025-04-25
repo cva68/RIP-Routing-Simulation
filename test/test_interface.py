@@ -1,6 +1,6 @@
 """
-    Unit tests for the interface module.
-    Author: C. Varney, K. Jones
+    Unit tests for the network interface moudle.
+    MIT License. Copyright © 2025 Connor Varney, Kahu Jones
 """
 
 import unittest

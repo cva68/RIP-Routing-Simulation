@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
 """
-    _structures.py
-    Handlers for RIP packet structures and RIP entry structures.
+    RIPDaemon packet structure / RIP entry stucture.
+    MIT License. Copyright © 2025 Connor Varney, Kahu Jones
 """
 
 HEADER_LENGTH = 4

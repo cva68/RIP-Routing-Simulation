@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
 """
-    _configloader.py
-    Configuration loader for the RIP Daemon. See config/sample.ini for an
-    example configuration file.
+    RIPDaemon - onfiguration loader for the RIP Daemon. See config/ for
+    examples.
+    MIT License. Copyright © 2025 Connor Varney, Kahu Jones
 """
 
 import configparser
