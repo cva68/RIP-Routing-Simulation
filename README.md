@@ -15,3 +15,7 @@ pip3 install tabulate
 ```python3
 python3 main.py /path/to/config.ini
 ```
+
+## Example Network
+The included example configuration files, ``1.ini`` through ``7.ini``, respresent the following test network: 
+![network diagram](example_network.png)
