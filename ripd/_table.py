@@ -9,12 +9,13 @@ class RouteEntry:
         Stores the destination address, next hop, metric, and timeout.
     """
     def __init__(self, destination_id: int, next_hop_id: int,
-                 metric: int, timeout: int):
+                 metric: int, timeout: int,
+                 garbage_collection_timer: bool = False):
         self.destination_id = destination_id
         self.next_hop_id = next_hop_id
         self.metric = metric
         self.timeout = timeout
-        self.garbage_colletion = False
+        self.garbage_collection_timer = garbage_collection_timer
 
     def as_list(self):
         """
@@ -71,48 +72,21 @@ class RouteTable:
                                  "Metric", "Timeout", "Garbage"],
                         tablefmt="fancy_grid")
 
-    def add_route(self, destination_id, next_hop_id, metric, timeout=None):
+    def add_route(self, destination_id, next_hop_id, metric,
+                  timeout=None, garbage_collection_timer=False):
         """
-            Add a new route to the routing table. If the route already exists,
-            update it if a new hop is offering a lower metric, or the same hop
-            has changed metric.
+            Add a new route to the routing table.
         """
-        if timeout is None:
-            timeout = time.time() + self._timeout
+        timeout = time.time() if timeout is None else timeout
+        if destination_id in self.routes.keys():
+            self._logger.warn("Overwriting existing record for router"
+                              + f" {destination_id}")
 
-        # Ignore routes to self. These will have been poisoned regardless.
-        if destination_id == self._router_id and metric != 0:
-            return
+        entry = RouteEntry(destination_id, next_hop_id, metric,
+                           timeout, garbage_collection_timer)
+        self.routes[destination_id] = entry
 
-        entry = None
-
-        # If the destination already exists,
-        if destination_id in self.routes:
-            # And the metric of this new entry is less than the existing one,
-            if metric < self.routes[destination_id].metric:
-                # Use the new entry
-                entry = RouteEntry(destination_id, next_hop_id,
-                                   metric, timeout)
-                self._logger.debug(f"Updating route for {destination_id} ")
-
-            # Or, if the metric is higher or the same,
-            if metric >= self.routes[destination_id].metric:
-                # and the next hop is the same
-                if self.routes[destination_id].next_hop_id == next_hop_id:
-                    # Use the new entry
-                    entry = RouteEntry(destination_id, next_hop_id,
-                                       metric, timeout)
-                    self._logger.debug(f"Updating metric for {destination_id}")
-
-        else:
-            # If the destination does not exist, create a new entry
-            entry = RouteEntry(destination_id, next_hop_id,
-                               metric, timeout)
-            self._logger.debug(f"Adding new route for {destination_id}")
-
-        # If we've established we should add the entry, do so now
-        if entry is not None:
-            self.routes[destination_id] = entry
+        self._logger.info(f"Table contents\n{self}")
 
     def remove_route(self, destination_id):
         """
@@ -124,6 +98,7 @@ class RouteTable:
         # Find the entry with the matching destination and remove it
         try:
             self.routes.pop(destination_id)
+            self._logger.info(f"Table contents\n{self}")
             return True
         except KeyError:
             self._logger.warning(f"Requested deletion of {destination_id}," +
@@ -135,6 +110,7 @@ class RouteTable:
             Remove all routes from the routing table.
         """
         self.routes.clear()
+        self._logger.info(f"Table contents\n{self}")
 
     def get_entry(self, destination_id):
         """
@@ -158,9 +134,6 @@ class RouteTable:
 
         # Append remaining entries, poisoning the metric where appropriate
         for entry in self.routes.values():
-            if entry.metric == 16:
-                continue
-
             if entry.next_hop_id == destination_router_id:
                 metric = 16
             else:
@@ -177,9 +150,12 @@ class RouteTable:
         """
             Check for timed out entries in the routing table.
             Remove any entries that have timed out.
+
+            :returns: True if entries have timed out, false otherwise
         """
         # Check each entry for timeouts
         to_remove = []
+        timed_out = False
         for router_id, entry in self.routes.items():
             # If the entry has been in garbage collection for too long,
             # remove it from the table
@@ -190,11 +166,23 @@ class RouteTable:
 
             # If the entry has timed out, start garbage collection timer
             # and set metric to 16
-            if time.time() - entry.timeout > self._timeout:
+            if time.time() - entry.timeout >= self._timeout:
+                if entry.garbage_collection_timer:
+                    # If the entry is already in garbage collection, ignore
+                    continue
+
                 self._logger.debug(f"Entry for router {router_id} timed out.")
-                entry.garbage_colletion = True
-                entry.metric = 16
+                self.routes[router_id].metric = 16
+                self.routes[router_id].garbage_collection_timer = True
+                timed_out = True
 
         # Remove any entries that have reached garbage collection time
         for router_id in to_remove:
             self.remove_route(router_id)
+
+        # If we've modified the table, print it
+        if to_remove or timed_out:
+            self._logger.info(f"Table contents\n{self}")
+
+        # Return true if a triggered update is required for timed out entries
+        return timed_out

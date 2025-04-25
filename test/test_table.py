@@ -30,7 +30,7 @@ class TestRouteTable(unittest.TestCase):
             Initialise a routing table
         """
         logger = logging.getLogger(__name__)
-        self.table = RouteTable(logger, router_id=1)
+        self.table = RouteTable(logger, router_id=0)
 
     def test_add_and_get_route(self):
         """
@@ -69,33 +69,47 @@ class TestRouteTable(unittest.TestCase):
         # Add entries to the table
         self.table.add_route(destination_id=1, next_hop_id=2, metric=1)
         self.table.add_route(destination_id=2, next_hop_id=3, metric=2)
-        self.table.add_route(destination_id=3, next_hop_id=4, metric=3)
 
         # Form the RIP packet
-        packet = self.table.get_packet(destination_router_id=4)
+        packet = self.table.get_packet(destination_router_id=0)
 
         # Parse the packet, ensure we get the correct command and sender
         command, sender, entries = RIPPacket.parse(packet)
         self.assertEqual(command, 2)
-        self.assertEqual(sender, 1)
+        self.assertEqual(sender, 0)
 
-        # Ensure the entries are correct
-        self.assertEqual(len(entries), 3)
-        for i, entry in enumerate(entries):
-            self.assertEqual(entry.id, i + 1)
-            self.assertEqual(entry.metric, i + 1)
+        # Ensure number of entries is correct
+        self.assertEqual(len(entries), 3)  # 2 + 1 for route to self
+
+        # Ensure the first entry is a route to self w/ cost 0
+        self.assertEqual(entries[0].id, 0)
+        self.assertEqual(entries[0].metric, 0)
+
+        # Ensure the second entry is a route to 1 w/ cost 1
+        self.assertEqual(entries[1].id, 1)
+        self.assertEqual(entries[1].metric, 1)
+
+        # Ensure the first entry is a route to 2 w/ cost 2
+        self.assertEqual(entries[2].id, 2)
+        self.assertEqual(entries[2].metric, 2)
 
     def test_poison_reverse(self):
         """
-            Test the poison reverse mechanism.
-            Ensure that the metric for the destination router is set to 16.
+            Ensure that we poison routes that have this router
+            as the next hop
         """
-        self.table.add_route(destination_id=1, next_hop_id=2, metric=5)
-        packet = self.table.get_packet(destination_router_id=1)
-        _command, _sender, entries = RIPPacket.parse(packet)
+        # Add entries to the table
+        self.table.add_route(destination_id=5, next_hop_id=0, metric=1)
 
-        self.assertEqual(entries[0].id, 1)
-        self.assertEqual(entries[0].metric, 16)
+        # Form and parse the packet
+        packet = self.table.get_packet(destination_router_id=0)
+        command, sender, entries = RIPPacket.parse(packet)
+
+        # Ensure the new entry has a metric of 16
+        self.assertEqual(entries[-1].metric, 16)
+
+
+
 
 
 if __name__ == "__main__":

@@ -14,6 +14,7 @@ from ._interface import Interface
 from ._table import RouteTable
 
 LOG_LEVEL = logging.DEBUG
+TABLE_PRINT_PERIOD = 1  # Seconds
 
 
 class RIPDaemon:
@@ -70,8 +71,9 @@ class RIPDaemon:
         # Initialise interface
         self._interface = Interface(self._logger, self._ports, self._bind)
 
-        # Set up periodic update timer
+        # Set up periodic update timer and table print timer
         self._next_periodic_update = time.time()
+        self._next_table_print = time.time()
 
         # Main loop
         try:
@@ -85,11 +87,21 @@ class RIPDaemon:
                 # Send periodic updates
                 if time.time() >= self._next_periodic_update:
                     self._periodic_update()
-                    self._logger.info(f"Table contents\n{self._table}")
+
+                # Periodically print table
+                if time.time() >= self._next_table_print:
+                    self._logger.info(f"Current Table:\n{self._table}")
+                    self._next_table_print = time.time() + TABLE_PRINT_PERIOD
 
                 # Check for timed out entries, and entries that require
                 # garbage collection
-                self._table.check_for_timeouts()
+                timed_out = self._table.check_for_timeouts()
+
+                # If any entries have timed out, send a triggered update
+                if timed_out:
+                    self._logger.debug("Timed out entry/entries detected, " +
+                                       "sending triggered update.")
+                    self._periodic_update()
 
         except KeyboardInterrupt:
             self._logger.info("Exiting RIP Daemon.")
@@ -142,13 +154,48 @@ class RIPDaemon:
                 continue
 
             # Unpack the packet
-            _command, router_id, entries = parse_result
-            self._logger.debug(f"Parsed packet: {_command}, {router_id}," +
-                               f"{entries}")
+            _command, source_router_id, entries = parse_result
+            self._logger.debug(f"Parsed packet: {parse_result}")
 
             # Add entries to the routing table
             for entry in entries:
-                metric = entry.metric + self._peer_info[router_id]['metric']
-                self._table.add_route(destination_id=entry.id,
-                                      next_hop_id=router_id,
-                                      metric=metric)
+                # Ignore the entry if it is for this router
+                if entry.id == self._id:
+                    continue
+
+                # Calculate the metric of this entry
+                new_metric = min(entry.metric +
+                                 self._peer_info[source_router_id]['metric'],
+                                 16)
+
+                if entry.id not in self._table.routes.keys():
+                    if new_metric < 16:
+                        # New route, not in table yet and it's valid
+                        self._table.add_route(destination_id=entry.id,
+                                              next_hop_id=source_router_id,
+                                              metric=new_metric)
+
+                elif (self._table.routes[entry.id].next_hop_id ==
+                      source_router_id):
+                    # This is an update from the same next hop — must always
+                    # accept changes
+
+                    if new_metric >= 16:
+                        # If the metric is already 16, and this is another
+                        # metric 16, ignore this as to not restart garbage
+                        # collection timer
+                        if self._table.routes[entry.id].metric == 16:
+                            continue
+
+                        timeout = time.time() - self._timeout
+                        self._table.routes[entry.id].timeout = timeout
+                    else:
+                        self._table.routes[entry.id].timeout = time.time()
+
+                    self._table.routes[entry.id].metric = new_metric
+
+                elif new_metric < self._table.routes[entry.id].metric:
+                    # Better route (lower metric) from a different next hop
+                    self._table.add_route(destination_id=entry.id,
+                                          next_hop_id=source_router_id,
+                                          metric=new_metric)

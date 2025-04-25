@@ -2,7 +2,7 @@ from socket import socket, AF_INET, SOCK_DGRAM, error
 import select
 import sys
 
-POLL_TIMEOUT = 5000  # Timeout on recieving incoming packets
+POLL_TIMEOUT = 500  # Timeout on recieving incoming packets
 
 
 class Interface:
@@ -119,6 +119,6 @@ class Interface:
                 self._logger.info('Recieved packet on port' +
                                   f' {registered_socket.getsockname()[1]}')
                 # likely need to change this 4096, and include the src port
-                recieved_packets.append(registered_socket.recvfrom(4096))
+                recieved_packets.append(registered_socket.recvfrom(512))
 
         return recieved_packets
