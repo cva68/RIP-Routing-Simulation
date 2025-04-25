@@ -109,8 +109,5 @@ class TestRouteTable(unittest.TestCase):
         self.assertEqual(entries[-1].metric, 16)
 
 
-
-
-
 if __name__ == "__main__":
     unittest.main()
