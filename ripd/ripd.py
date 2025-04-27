@@ -46,6 +46,9 @@ class RIPDaemon:
         self._table = RouteTable(self._logger, self._id,
                                  self._timeout, self._garbage_collection_time)
 
+        # Flag for integration tests to cleanly exit
+        self._run = True
+
     def _setup_logger(self, log_level: int):
         """
             Setup logger for the RIP Daemon.
@@ -80,7 +83,7 @@ class RIPDaemon:
             self._logger.info('RIP Daemon started.')
 
             # Main loop
-            while True:
+            while self._run:
                 # Process incoming data
                 self._process_incoming_data()
 
