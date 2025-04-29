@@ -25,27 +25,47 @@ class ConfigLoader:
             :returns: Dictionary containing router ID and list of incoming
                       ports.
         """
+        router_info = {}
         try:
-            router_info = {}
             router_info['router_id'] = int(self._config['ROUTER']['id'])
-            incoming_ports = self._config['ROUTER']['incoming_ports']
+        except (KeyError, ValueError):
+            self._logger.critical("Invalid or missing 'id' in ROUTER section.")
+            sys.exit(1)
 
+        try:
+            incoming_ports = self._config['ROUTER']['incoming_ports']
             router_info['incoming_ports'] = incoming_ports.split(', ')
             for i, port in enumerate(router_info['incoming_ports']):
                 router_info['incoming_ports'][i] = int(port)
+        except (KeyError, ValueError):
+            self._logger.critical("Invalid or missing 'incoming_ports' " +
+                                  "in ROUTER section.")
+            sys.exit(1)
 
+        try:
             router_info['periodic_update_time'] = \
                 int(self._config['ROUTER']['periodic_update_time'])
+        except (KeyError, ValueError):
+            self._logger.critical("Invalid or missing 'periodic_update_time'" +
+                                  " in ROUTER section.")
+            sys.exit(1)
+
+        try:
             router_info['garbage_collection_time'] = \
                 int(self._config['ROUTER']['garbage_collection_time'])
-
-            router_info['timeout'] = int(self._config['ROUTER']['timeout'])
-
-            return router_info
-
         except (KeyError, ValueError):
-            self._logger.critical("Invalid configuration file.")
+            self._logger.critical("Invalid or missing 'garbage_collection_" +
+                                  "time' in ROUTER section.")
             sys.exit(1)
+
+        try:
+            router_info['timeout'] = int(self._config['ROUTER']['timeout'])
+        except (KeyError, ValueError):
+            self._logger.critical("Invalid or missing 'timeout' in ROUTER" +
+                                  " section.")
+            sys.exit(1)
+
+        return router_info
 
     def get_peer_info(self):
         """
@@ -63,8 +83,8 @@ class ConfigLoader:
                     peer['metric'] = int(self._config[section]['metric'])
                     peer_info[int(self._config[section]['router_id'])] = peer
                 except (KeyError, ValueError):
-                    self._logger.critical(f"Invalid configuration for peer \
-                                          {section}.")
+                    self._logger.critical("Invalid configuration for peer " +
+                                          f"{section}.")
                     sys.exit(1)
 
         return peer_info
