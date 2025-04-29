@@ -1,3 +1,8 @@
+"""
+    RIPDaemon - Behave steps for integration testing.
+    MIT License. Copyright © 2025 Connor Varney, Kahu Jones
+"""
+
 # Ignore this file from flake8 - behave is not compliant by design
 # flake8: noqa
 
