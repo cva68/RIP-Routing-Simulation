@@ -1,8 +1,11 @@
-# COSC364 RIP Assignment
-An implementation of parts of the RIP routing protocol, designed to run as several
+# RIP Routing Simulation
+An implementation of parts of the RIP routing protocol for COSC364, designed to run as several
 instances on the same machine. Each instance runs as a separate process, and these
 processes communicate through local sockets. Designed for emulation of a small network,
 and exploring the response of the RIP protocol to different types of faults.
+
+Features automated linting (`pylint`), unit testing (`unittest`) and behavioural testing 
+(`behave`) as part of the [CI pipeline](https://github.com/cva68/RIP-Routing-Simulation/actions).
 
 ## Usage
 1. Install requirements
